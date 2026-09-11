@@ -115,6 +115,20 @@ class ContactController extends Controller
         return view('contacts.index', compact('contacts', 'admins', 'waAccounts', 'issue'));
     }
 
+    public function create()
+    {
+        $admins = User::where('role', 'admin')->where('status', 'active')->get();
+        $waAccounts = WaAccount::where('status', 'Aktif')->get();
+
+        return view('contacts.create', compact('admins', 'waAccounts'));
+    }
+
+    public function edit(Contact $contact)
+    {
+        $this->authorize('update', $contact);
+        return redirect()->route('contacts.show', $contact);
+    }
+
     public function show(Contact $contact)
     {
         $contact->load([

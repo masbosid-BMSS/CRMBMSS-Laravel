@@ -56,7 +56,7 @@ class DemoSeeder extends Seeder
             $rel = $relations[$i % count($relations)];
             $prog = $programs[$i % $programs->count()]->name;
 
-            $c = Contact::updateOrCreate(
+            $c = Contact::firstOrCreate(
                 ['niss' => $niss],
                 [
                     'id' => (string) Str::uuid(),
