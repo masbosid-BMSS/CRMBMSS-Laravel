@@ -1,0 +1,43 @@
+services:
+  app:
+    image: php:8.3-fpm-alpine
+    container_name: crmbmss_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    environment:
+      - DB_HOST=db
+      - DB_DATABASE=${DB_DATABASE:-crmbmss}
+      - DB_USERNAME=${DB_USERNAME:-crmbmss}
+      - DB_PASSWORD=${DB_PASSWORD:-secret123}
+
+  web:
+    image: nginx:alpine
+    container_name: crmbmss_web
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app
+
+  db:
+    image: mariadb:10.11
+    container_name: crmbmss_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-crmbmss}
+      MYSQL_USER: ${DB_USERNAME:-crmbmss}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret123}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret123}
+    ports:
+      - "${FORWARD_DB_PORT:-3306}:3306"
+    volumes:
+      - crmbmss_db_data:/var/lib/mysql
+
+volumes:
+  crmbmss_db_data:
+    driver: local

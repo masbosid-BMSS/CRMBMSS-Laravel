@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+docker run --rm \
+  -v "$(pwd)":/app \
+  -w /app \
+  -e COMPOSER_ALLOW_SUPERUSER=1 \
+  --network host \
+  composer:2 php artisan "$@"

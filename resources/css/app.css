@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #343A72;
+  --navy2: #252B5B;
+  --navySoft: #EEF0F8;
+  --red: #FF303B;
+  --redSoft: #FFF0F2;
+  --gold: #FFC316;
+  --goldSoft: #FFF7D8;
+  --green: #1F9D68;
+  --greenSoft: #EAF8F1;
+  --orange: #C98600;
+  --orangeSoft: #FFF5DD;
+  --bg: #F8F8FB;
+  --card: #ffffff;
+  --line: #E1E3EC;
+  --text: #242842;
+  --muted: #697087;
+  --side: 260px;
+  --top: 68px;
+  --r: 18px;
+  --sh: 0 12px 30px rgba(52, 58, 114, 0.1);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: "Plus Jakarta Sans", Inter, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Badge status styles matching prototype */
+.s-loyal { background: var(--navySoft); color: var(--navy); }
+.s-active { background: var(--greenSoft); color: #166848; }
+.s-risk { background: var(--orangeSoft); color: #8b6500; }
+.s-dorm { background: #fdecef; color: #8d2e35; }
+.s-red { background: var(--redSoft); color: var(--red); }
+.s-gold { background: var(--goldSoft); color: #8b6500; }
+.s-gray { background: #eff1f7; color: #697087; }
+.s-master { background: var(--goldSoft); color: #8b6500; }
+.s-block { background: #242842; color: #ffffff; }
+.s-untrust { background: #fff0f2; color: #b3202a; border: 1px solid #ffd0d4; }
+.s-bored { background: #f2f1ff; color: #6d59a8; border: 1px solid #ddd8f7; }
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cfd4e5;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #aab0ca;
+}
