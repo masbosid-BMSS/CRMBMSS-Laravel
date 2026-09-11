@@ -64,11 +64,10 @@
         <button type="submit" class="btn btn-p full" style="margin-top:4px">Masuk</button>
       </form>
 
+      {{-- JANGAN pernah menampilkan kredensial di halaman publik. --}}
       <div class="note">
-        <div class="footnote">
-          <b>Kredensial Demo:</b><br>
-          • Master Admin: <b style="color:var(--navy)">bmssmanfaat</b> / <b style="color:var(--navy)">bismillah100</b><br>
-          • CS Nisa: <b style="color:var(--navy)">nisa.cs</b> / <b style="color:var(--navy)">admin12345</b>
+        <div class="footnote small muted">
+          Lupa password? Hubungi Master Admin untuk reset.
         </div>
       </div>
     </div>
