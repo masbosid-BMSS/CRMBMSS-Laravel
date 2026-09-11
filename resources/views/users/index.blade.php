@@ -67,7 +67,7 @@
           <td>{{ $u->last_login_at?->diffForHumans() ?: '-' }}</td>
           <td>
             <div class="q">
-              <form action="{{ route('users.reset-password', $u) }}" method="POST" onsubmit="return confirm('Reset password {{ $u->name }} menjadi admin12345?')">
+              <form action="{{ route('users.reset-password', $u) }}" method="POST" onsubmit="return confirm('Reset password {{ $u->name }}? Sistem akan membuat password acak baru yang ditampilkan sekali.')">
                 @csrf
                 <button type="submit" class="mini p">Reset Password</button>
               </form>

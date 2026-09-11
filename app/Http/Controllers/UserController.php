@@ -78,12 +78,16 @@ class UserController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
+        // Password acak, bukan konstanta yang bisa ditebak.
+        // Tanpa simbol agar mudah disampaikan ulang ke pengguna.
+        $plain = Str::password(14, symbols: false);
+
         $user->update([
-            'password' => Hash::make('admin12345'),
+            'password' => Hash::make($plain),
             'must_change_password' => true,
         ]);
 
-        return redirect()->route('users.index')->with('success', "Password {$user->name} direset menjadi admin12345.");
+        return redirect()->route('users.index')->with('success', "Password {$user->name} direset. Password baru: {$plain} — catat dan sampaikan sekarang, tidak akan ditampilkan lagi.");
     }
 
     public function transfer(Request $request, User $user)

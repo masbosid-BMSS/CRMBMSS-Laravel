@@ -7,8 +7,8 @@ Aplikasi web CRM BMSS dibangun dengan arsitektur **Laravel 11**, **MySQL/MariaDB
 ## Fitur & Modul Utama
 
 1. **Authentication & Role Policy**:
-   - Master Admin (`bmssmanfaat` / `bismillah100`): Full access manajemen user, transfer database, KPI/target CS, multi-WA management, payment methods, campaign/program global, settings, export laporan.
-   - Admin / CS (`nisa.cs`, `rani.cs`, dll / `admin12345`): Data isolation untuk portfolio miliknya (read/write), view-only pada database rekan CS.
+   - Master Admin: Full access manajemen user, transfer database, KPI/target CS, multi-WA management, payment methods, campaign/program global, settings, export laporan.
+   - Admin / CS: Data isolation untuk portfolio miliknya (read/write), view-only pada database rekan CS.
 2. **NISS Generator**:
    - Format standar `NISS-00000001` dengan atomic database locking (`niss_sequences`) untuk mengeliminasi race-condition pada transaksi bersamaan.
 3. **Zakat Center & Calculator Terintegrasi**:
@@ -35,16 +35,20 @@ Aplikasi web CRM BMSS dibangun dengan arsitektur **Laravel 11**, **MySQL/MariaDB
 
 ---
 
-## Kredensial Bawaan (Default Demo & Production Baseline)
+## Kredensial Bawaan
 
-| Akun | Username | Password | Role |
-| :--- | :--- | :--- | :--- |
-| **Master Admin** | `bmssmanfaat` | `bismillah100` | Master Admin (Akses Penuh) |
-| **CS Nisa** | `nisa.cs` | `admin12345` | Admin / CS (Tier 1) |
-| **CS Rani** | `rani.cs` | `admin12345` | Admin / CS (Tier 2) |
-| **CS Fikri** | `fikri.cs` | `admin12345` | Admin / CS (Tier 3) |
-| **CS Dina** | `dina.cs` | `admin12345` | Admin / CS (Tier 3) |
-| **CS Yusuf** | `yusuf.cs` | `admin12345` | Admin / CS (Tier 2) |
+> 🔐 **Kredensial tidak didokumentasikan di repositori ini.**
+>
+> Akun awal dibuat oleh `database/seeders/DatabaseSeeder.php` dengan password
+> **placeholder** untuk pengembangan lokal. Pada instalasi produksi, password
+> **wajib diganti** sebelum aplikasi dapat diakses publik.
+>
+> Untuk mengubah password: login sebagai Master Admin → menu **Manajemen User**,
+> atau jalankan `php artisan tinker` dan perbarui kolom `password` dengan
+> `Hash::make('password-baru-yang-kuat')`.
+>
+> ⚠️ Jika Anda meng-clone repo ini dan mengaktifkan seeder di server yang dapat
+> diakses publik, **ganti seluruh password akun sebelum go-live.**
 
 ---
 
