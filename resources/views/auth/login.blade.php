@@ -3,110 +3,76 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login — CRM BMSS Baitulmaal Sejuta Santri</title>
+    <title>CRM BMSS v1.2 — DEMO Tim</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-gradient-to-tr from-[#fafbff] to-[#fff7f8] font-sans antialiased text-[#242842]">
-    <div class="min-h-screen grid lg:grid-cols-[1fr_420px]">
-        <!-- Hero Left Side -->
-        <div class="p-8 md:p-14 flex items-center justify-center">
-            <div class="max-w-2xl w-full">
-                <!-- Brand Title -->
-                <div class="flex items-center gap-5 mb-8">
-                    <div class="w-20 h-20 rounded-3xl bg-[#343A72] text-white flex flex-col items-center justify-center font-black shadow-bmss">
-                        <span class="text-2xl leading-none">BM</span>
-                        <span class="text-[10px] tracking-widest text-[#FFC316]">SS</span>
-                    </div>
-                    <div>
-                        <h1 class="text-4xl md:text-5xl font-extrabold text-[#343A72] tracking-tight leading-none">
-                            CRM <span class="text-[#FF303B]">BMSS</span>
-                        </h1>
-                        <p class="text-sm md:text-base text-gray-500 mt-2 font-medium">
-                            Baitulmaal Sejuta Santri · Sistem Manajemen Hubungan Donatur, Zakat, & Fundraising
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Hero Feature Cards -->
-                <div class="grid sm:grid-cols-2 gap-4 mt-6">
-                    <div class="bg-white/80 backdrop-blur-md border border-[#343A72]/10 p-5 rounded-2xl shadow-bm-sm">
-                        <b class="text-sm font-bold text-[#252B5B]">Dashboard Role-Based</b>
-                        <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                            Master Admin memantau seluruh database. Admin/CS fokus ke portfolio kontak dan target miliknya.
-                        </p>
-                    </div>
-                    <div class="bg-white/80 backdrop-blur-md border border-[#343A72]/10 p-5 rounded-2xl shadow-bm-sm">
-                        <b class="text-sm font-bold text-[#252B5B]">Penghitung Zakat Terintegrasi</b>
-                        <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                            Kalkulasi nisab & haul terhubung langsung ke profil muzakki dan pencatatan transaksi dana.
-                        </p>
-                    </div>
-                    <div class="bg-white/80 backdrop-blur-md border border-[#343A72]/10 p-5 rounded-2xl shadow-bm-sm">
-                        <b class="text-sm font-bold text-[#252B5B]">Data Isolation & NISS</b>
-                        <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                            Hak akses mutlak di backend. NISS menjamin nomor identitas tunggal bebas race condition.
-                        </p>
-                    </div>
-                    <div class="bg-white/80 backdrop-blur-md border border-[#343A72]/10 p-5 rounded-2xl shadow-bm-sm">
-                        <b class="text-sm font-bold text-[#252B5B]">Multi-WA & Capacity Slot</b>
-                        <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                            Maksimal 5 nomor WhatsApp per CS dengan batas kapasitas 3.000–5.000 database.
-                        </p>
-                    </div>
-                </div>
-            </div>
+<body>
+<div class="login" id="login">
+  <div class="hero">
+    <div class="hero-in">
+      <div class="brand">
+        <div style="width:100px;height:100px;border-radius:24px;background:var(--navy);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;box-shadow:var(--sh)">
+          <span style="font-size:32px;line-height:1">BM</span>
+          <span style="font-size:14px;color:var(--gold);letter-spacing:2px">SS</span>
         </div>
-
-        <!-- Login Card Right Side -->
-        <div class="bg-white/60 backdrop-blur-md border-t lg:border-t-0 lg:border-l border-[#343A72]/10 flex items-center justify-center p-6 md:p-10">
-            <div class="bg-white border border-[#E1E3EC] rounded-[24px] shadow-bmss p-7 w-full max-w-sm">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-11 h-11 rounded-xl bg-[#343A72] text-white font-extrabold grid place-items-center text-sm">
-                        BM
-                    </div>
-                    <div>
-                        <b class="block text-sm font-bold text-[#252B5B]">Internal BMSS</b>
-                        <span class="text-xs text-gray-400">Silakan login untuk melanjutkan</span>
-                    </div>
-                </div>
-
-                @if($errors->any())
-                <div class="p-3 mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
-                    {{ $errors->first() }}
-                </div>
-                @endif
-
-                <form action="{{ route('login') }}" method="POST" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label for="username" class="block text-xs font-extrabold text-[#252B5B] mb-1.5">Username</label>
-                        <input type="text" name="username" id="username" value="{{ old('username') }}" required autofocus placeholder="Masukkan username" class="w-full h-11 px-3.5 bg-white border border-[#E1E3EC] rounded-xl text-sm focus:border-[#343A72] focus:ring-0 transition">
-                    </div>
-
-                    <div>
-                        <label for="password" class="block text-xs font-extrabold text-[#252B5B] mb-1.5">Password</label>
-                        <input type="password" name="password" id="password" required placeholder="Masukkan password" class="w-full h-11 px-3.5 bg-white border border-[#E1E3EC] rounded-xl text-sm focus:border-[#343A72] focus:ring-0 transition">
-                    </div>
-
-                    <div class="flex items-center justify-between text-xs">
-                        <label class="flex items-center gap-2 text-gray-600 font-medium">
-                            <input type="checkbox" name="remember" class="w-4 h-4 rounded text-[#343A72] focus:ring-[#343A72] border-gray-300">
-                            <span>Ingat saya</span>
-                        </label>
-                    </div>
-
-                    <button type="submit" class="w-full h-11 rounded-xl bg-[#343A72] text-white font-extrabold text-sm hover:bg-[#252B5B] transition shadow-bm-sm">
-                        Masuk
-                    </button>
-                </form>
-
-                <div class="mt-6 p-4 rounded-2xl bg-gradient-to-tr from-[#EEF0F8] to-[#f9faff] border border-[#dce2f2] text-xs text-gray-500">
-                    <b>Akun Bawaan Demo:</b><br>
-                    • Master Admin: <code class="text-[#343A72] font-bold">bmssmanfaat</code> / <code class="text-[#343A72] font-bold">bismillah100</code><br>
-                    • CS Nisa: <code class="text-[#343A72] font-bold">nisa.cs</code> / <code class="text-[#343A72] font-bold">admin12345</code>
-                </div>
-            </div>
+        <div>
+          <h1>CRM <span>BMSS</span></h1>
+          <div style="margin-top:10px;font-size:16px;color:var(--muted);max-width:560px">
+            Baitulmaal Sejuta Santri · Sistem CRM Production-Ready untuk kontak, follow-up, transaksi, campaign, konsultasi zakat, dan laporan.
+          </div>
         </div>
+      </div>
+      <div class="hero-grid">
+        <div class="hero-card"><b>Dashboard role-based</b><div class="small muted" style="margin-top:6px">Master melihat semua data. Admin/CS fokus ke portfolio dan data miliknya.</div></div>
+        <div class="hero-card"><b>Penghitung Zakat Terintegrasi</b><div class="small muted" style="margin-top:6px">Hitung zakat dari profil muzakki, simpan riwayat, lalu catat pembayarannya.</div></div>
+        <div class="hero-card"><b>Ownership data</b><div class="small muted" style="margin-top:6px">CS hanya bisa mengotak-atik database miliknya. Data CS lain tetap bisa dilihat (view only).</div></div>
+        <div class="hero-card"><b>Warna selaras BMSS</b><div class="small muted" style="margin-top:6px">Palet navy, red, dan gold mengikuti identitas visual logo BMSS.</div></div>
+      </div>
     </div>
+  </div>
+
+  <div class="panel">
+    <div class="login-card card">
+      <div class="mini-brand">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:900;font-size:18px">
+          BM
+        </div>
+        <div>
+          <b style="display:block;color:var(--navy)">Internal BMSS</b>
+          <span class="small muted">CRM BMSS Laravel</span>
+        </div>
+      </div>
+
+      @if($errors->any())
+        <div class="alert e">{{ $errors->first() }}</div>
+      @endif
+
+      @if(session('success'))
+        <div class="alert s">{{ session('success') }}</div>
+      @endif
+
+      <form action="{{ route('login') }}" method="POST">
+        @csrf
+        <div class="field">
+          <label>Username</label>
+          <input class="input" name="username" value="{{ old('username') }}" required autofocus placeholder="Masukkan username">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input class="input" name="password" type="password" required placeholder="Masukkan password">
+        </div>
+        <button type="submit" class="btn btn-p full" style="margin-top:4px">Masuk</button>
+      </form>
+
+      <div class="note">
+        <div class="footnote">
+          <b>Kredensial Demo:</b><br>
+          • Master Admin: <b style="color:var(--navy)">bmssmanfaat</b> / <b style="color:var(--navy)">bismillah100</b><br>
+          • CS Nisa: <b style="color:var(--navy)">nisa.cs</b> / <b style="color:var(--navy)">admin12345</b>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

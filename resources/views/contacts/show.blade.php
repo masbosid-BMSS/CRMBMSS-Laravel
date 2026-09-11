@@ -1,408 +1,329 @@
 <x-app-layout>
-    <!-- Readonly Banner if User cannot edit -->
-    @if(! $canEdit)
-    <div class="mb-4 p-4 rounded-2xl bg-[#FAFBFE] border border-[#DCE1F1] text-xs text-[#616A8B] flex items-center gap-2">
-        <span class="text-base">👁</span>
-        <span>Mode lihat. Database ini dikelola oleh <b>{{ $contact->owner?->name ?: '-' }}</b>. Anda dapat melihat informasi profil donatur, tetapi tidak dapat mengubah data.</span>
+  <div class="ph">
+    <div>
+      <h1 class="pt">Profil Kontak</h1>
+      <p class="ps">Overview, zakat, transaksi, komunikasi, dan follow-up dalam satu layar.</p>
     </div>
-    @endif
+  </div>
 
-    <!-- Relation Banner Alert -->
-    @if($contact->relation_status === 'Blokir')
-    <div class="mb-4 p-4 rounded-2xl bg-[#242842] text-white text-xs font-medium flex items-center justify-between">
-        <div>
-            <b class="text-red-400">⛔ BLOKIR / DO NOT CONTACT</b> — Kontak meminta untuk tidak dihubungi lagi. Dilarang mengirimkan pesan WhatsApp, broadcast, atau reminder.
-            @if($contact->relationship_note)
-            <div class="mt-1 text-gray-300 text-[11px]">{{ $contact->relationship_note }}</div>
-            @endif
-        </div>
-    </div>
-    @elseif($contact->relation_status === 'Untrust')
-    <div class="mb-4 p-4 rounded-2xl bg-[#FFF0F2] border border-[#ffd1d5] text-[#9b2630] text-xs font-medium">
-        <b>⚠ STATUS RELASI: UNTRUST</b> — Kepercayaan donatur terhadap program/pengelolaan menurun. Gunakan pendekatan transparan dan berikan laporan berkala.
-        @if($contact->relationship_note)
-        <div class="mt-1 text-[11px]">{{ $contact->relationship_note }}</div>
+  @php
+    $canEdit = auth()->user()->can('update', $contact);
+    $relCls = $contact->relation_status === 'Blokir' ? 's-block' : ($contact->relation_status === 'Untrust' ? 's-untrust' : ($contact->relation_status === 'Bosan' ? 's-bored' : 's-active'));
+    $statusCls = $contact->status === 'Loyal' ? 's-loyal' : ($contact->status === 'Aktif' ? 's-active' : ($contact->status === 'At Risk' ? 's-risk' : ($contact->status === 'Dormant' ? 's-dorm' : 's-gray')));
+    $zCls = $contact->zakat_status === 'Lunas' ? 's-active' : ($contact->zakat_status === 'Outstanding' ? 's-red' : ($contact->zakat_status === 'Sebagian' ? 's-risk' : 's-gray'));
+  @endphp
+
+  <div class="card profile-top" x-data="{ tab: 'ov', editModal: false, txModal: false, fuModal: false }">
+    <div class="phead">
+      <div style="flex:1;min-width:260px">
+        @if(! $canEdit)
+          <div class="readonly">👁 Mode lihat. Database ini dikelola oleh <b>{{ $contact->owner?->name ?: '-' }}</b>. Anda dapat melihat informasi, tetapi tidak dapat mengubah data.</div>
         @endif
-    </div>
-    @elseif($contact->relation_status === 'Bosan')
-    <div class="mb-4 p-4 rounded-2xl bg-[#F2F1FF] border border-[#ddd8f7] text-[#5e4d91] text-xs font-medium">
-        <b>◌ STATUS RELASI: BOSAN</b> — Komunikasi terasa berulang. Disarankan menawarkan variasi program baru atau mengurangi intensitas follow-up.
-        @if($contact->relationship_note)
-        <div class="mt-1 text-[11px]">{{ $contact->relationship_note }}</div>
+
+        @if($contact->relation_status === 'Blokir')
+          <div class="readonly" style="background:#242842;color:#fff;border-color:#242842">
+            ⛔ BLOKIR / DO NOT CONTACT — jangan lakukan WhatsApp, broadcast, atau follow-up. {{ $contact->relationship_note }}
+          </div>
+        @elseif($contact->relation_status === 'Untrust')
+          <div class="readonly" style="background:var(--redSoft);color:#9b2630;border-color:#ffd1d5">
+            ⚠ UNTRUST — kepercayaan menurun. {{ $contact->relationship_note }}
+          </div>
+        @elseif($contact->relation_status === 'Bosan')
+          <div class="readonly" style="background:#f2f1ff;color:#5e4d91;border-color:#ddd8f7">
+            ◌ BOSAN — program/komunikasi terasa berulang. {{ $contact->relationship_note }}
+          </div>
         @endif
+
+        <div class="pid">
+          <div class="ava">{{ $contact->initials }}</div>
+          <div>
+            <h2 style="margin:0 0 4px;font-size:24px">{{ $contact->name }}</h2>
+            <div class="muted">{{ $contact->city ?: '-' }} · {{ $contact->phone }} · <b>{{ $contact->niss }}</b></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+              <span class="status {{ $statusCls }}">{{ $contact->status }}</span>
+              <span class="status {{ $relCls }}">{{ $contact->relation_status }}</span>
+              <span class="status {{ $zCls }}">{{ $contact->zakat_status }}</span>
+              <span class="status s-gray">Owner: {{ $contact->owner?->name ?: '-' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pkpi">
+          <div class="pk"><small>Lifetime</small><b>Rp {{ number_format($contact->ltv, 0, ',', '.') }}</b></div>
+          <div class="pk"><small>Transaksi</small><b>{{ $contact->transactions->count() }}</b></div>
+          <div class="pk"><small>Zakat Terhitung</small><b>Rp {{ number_format($latestCalc?->zakat_amount ?? 0, 0, ',', '.') }}</b></div>
+          <div class="pk"><small>Last Activity</small><b>{{ $contact->last_activity_at?->diffForHumans() ?: '-' }}</b></div>
+        </div>
+      </div>
+
+      <div class="q">
+        @if($contact->relation_status !== 'Blokir')
+          <a href="https://wa.me/{{ preg_replace('/\D/', '', $contact->phone) }}" target="_blank" rel="noopener" class="btn btn-s">WhatsApp</a>
+        @endif
+        @if($canEdit)
+          <button type="button" @click="editModal = true" class="btn btn-s">Edit</button>
+          <a href="{{ route('zakat.calculator', ['contact_id' => $contact->id]) }}" class="btn btn-r">Hitung Zakat</a>
+          <button type="button" @click="txModal = true" class="btn btn-p">+ Dana</button>
+          @if($contact->relation_status !== 'Blokir')
+            <button type="button" @click="fuModal = true" class="btn btn-s">Follow-up</button>
+          @endif
+        @endif
+      </div>
     </div>
-    @endif
 
-    <!-- Profile Header Card -->
-    <div class="bg-white border border-[#E1E3EC] rounded-[24px] p-6 shadow-bm-sm mb-6" x-data="{ tab: 'overview', editModal: false, txModal: false, fuModal: false }">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-gray-100">
-            <!-- Left Info -->
-            <div class="flex items-start gap-4">
-                <div class="w-16 h-16 rounded-full bg-[#EEF0F8] text-[#343A72] font-black text-xl grid place-items-center flex-shrink-0 shadow-inner">
-                    {{ $contact->initials }}
-                </div>
-                <div>
-                    <div class="flex flex-wrap items-center gap-2 mb-1">
-                        <h1 class="text-2xl font-black text-[#252B5B]">{{ $contact->name }}</h1>
-                        <span class="px-2.5 py-0.5 rounded-full bg-gray-100 font-mono text-xs font-bold text-gray-700">{{ $contact->niss }}</span>
-                    </div>
-                    <div class="text-xs text-gray-500 font-medium flex flex-wrap items-center gap-2">
-                        <span>{{ $contact->city ?: 'Kota belum diisi' }}</span>
-                        <span>•</span>
-                        <span>{{ $contact->phone }}</span>
-                        <span>•</span>
-                        <span>Owner CS: <b>{{ $contact->owner?->name ?: '-' }}</b></span>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2 mt-3">
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold
-                            {{ $contact->status === 'Loyal' ? 's-loyal' : ($contact->status === 'Aktif' ? 's-active' : ($contact->status === 'At Risk' ? 's-risk' : ($contact->status === 'Dormant' ? 's-dorm' : 's-gray'))) }}">
-                            {{ $contact->status }}
-                        </span>
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold
-                            {{ $contact->relation_status === 'Blokir' ? 's-block' : ($contact->relation_status === 'Untrust' ? 's-untrust' : ($contact->relation_status === 'Bosan' ? 's-bored' : 's-active')) }}">
-                            Relasi: {{ $contact->relation_status }}
-                        </span>
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold
-                            {{ $contact->zakat_status === 'Lunas' ? 's-active' : ($contact->zakat_status === 'Outstanding' ? 's-red' : ($contact->zakat_status === 'Sebagian' ? 's-risk' : ($contact->zakat_status === 'Prospek' ? 's-gold' : 's-gray'))) }}">
-                            Zakat: {{ $contact->zakat_status }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Actions -->
-            <div class="flex flex-wrap items-center gap-2">
-                @if($contact->relation_status !== 'Blokir')
-                    <a href="https://wa.me/{{ preg_replace('/\D/', '', $contact->phone) }}" target="_blank" rel="noopener" class="h-10 px-4 rounded-xl bg-[#EAF8F1] text-[#166848] text-xs font-extrabold flex items-center gap-1.5 hover:bg-[#caead8] transition">
-                        <span>☎</span>
-                        <span>WhatsApp</span>
-                    </a>
-                @endif
-
-                @if($canEdit)
-                    <button type="button" @click="editModal = true" class="h-10 px-4 rounded-xl bg-white border border-[#E1E3EC] text-[#343A72] text-xs font-extrabold hover:bg-gray-50 transition">
-                        Edit
-                    </button>
-                    <a href="{{ route('zakat.calculator', ['contact_id' => $contact->id]) }}" class="h-10 px-4 rounded-xl bg-[#FF303B] text-white text-xs font-extrabold flex items-center gap-1.5 hover:bg-red-600 transition shadow-sm">
-                        <span>＋</span>
-                        <span>Hitung Zakat</span>
-                    </a>
-                    <button type="button" @click="txModal = true" class="h-10 px-4 rounded-xl bg-[#343A72] text-white text-xs font-extrabold flex items-center gap-1.5 hover:bg-[#252B5B] transition shadow-sm">
-                        <span>＋</span>
-                        <span>Tambah Dana</span>
-                    </button>
-                    @if($contact->relation_status !== 'Blokir')
-                        <button type="button" @click="fuModal = true" class="h-10 px-4 rounded-xl bg-white border border-[#E1E3EC] text-gray-700 text-xs font-extrabold hover:bg-gray-50 transition">
-                            Follow-up
-                        </button>
-                    @endif
-                @endif
-            </div>
-        </div>
-
-        <!-- 4 Quick Stats -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-5">
-            <div class="p-3.5 rounded-2xl bg-[#FBFBFE] border border-[#ECEEF5]">
-                <div class="text-[10px] font-bold text-gray-400 uppercase">Lifetime Donasi (LTV)</div>
-                <div class="text-base font-extrabold text-[#343A72] mt-1">Rp {{ number_format($contact->ltv, 0, ',', '.') }}</div>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-[#FBFBFE] border border-[#ECEEF5]">
-                <div class="text-[10px] font-bold text-gray-400 uppercase">Total Transaksi</div>
-                <div class="text-base font-extrabold text-[#252B5B] mt-1">{{ $contact->transactions->count() }} kali</div>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-[#FBFBFE] border border-[#ECEEF5]">
-                <div class="text-[10px] font-bold text-gray-400 uppercase">Zakat Terhitung</div>
-                <div class="text-base font-extrabold text-[#C98600] mt-1">
-                    Rp {{ number_format($latestCalc?->zakat_amount ?? 0, 0, ',', '.') }}
-                </div>
-            </div>
-            <div class="p-3.5 rounded-2xl bg-[#FBFBFE] border border-[#ECEEF5]">
-                <div class="text-[10px] font-bold text-gray-400 uppercase">Aktivitas Terakhir</div>
-                <div class="text-base font-extrabold text-gray-700 mt-1">{{ $contact->last_activity_at?->diffForHumans() ?: '-' }}</div>
-            </div>
-        </div>
-
-        <!-- Tabs Navigation -->
-        <div class="flex items-center gap-2 mt-6 border-b border-gray-100 pb-3 text-xs font-extrabold">
-            <button type="button" @click="tab = 'overview'" :class="tab === 'overview' ? 'bg-[#343A72] text-white' : 'bg-white text-gray-500 border border-[#E1E3EC] hover:bg-gray-50'" class="px-4 py-2 rounded-full transition">
-                Overview
-            </button>
-            <button type="button" @click="tab = 'zakat'" :class="tab === 'zakat' ? 'bg-[#343A72] text-white' : 'bg-white text-gray-500 border border-[#E1E3EC] hover:bg-gray-50'" class="px-4 py-2 rounded-full transition">
-                Zakat ({{ $contact->calculations->count() }})
-            </button>
-            <button type="button" @click="tab = 'transactions'" :class="tab === 'transactions' ? 'bg-[#343A72] text-white' : 'bg-white text-gray-500 border border-[#E1E3EC] hover:bg-gray-50'" class="px-4 py-2 rounded-full transition">
-                Transaksi ({{ $contact->transactions->count() }})
-            </button>
-            <button type="button" @click="tab = 'followup'" :class="tab === 'followup' ? 'bg-[#343A72] text-white' : 'bg-white text-gray-500 border border-[#E1E3EC] hover:bg-gray-50'" class="px-4 py-2 rounded-full transition">
-                Follow-up ({{ $contact->followups->count() }})
-            </button>
-        </div>
-
-        <!-- Tab 1: Overview -->
-        <div x-show="tab === 'overview'" class="pt-5 grid md:grid-cols-2 gap-4 text-xs">
-            <div class="p-5 rounded-2xl bg-[#FBFBFE] border border-[#ECEEF5] space-y-3">
-                <h3 class="font-extrabold text-sm text-[#252B5B] mb-2">Informasi Kontak</h3>
-                <div class="flex justify-between py-1.5 border-b border-dashed border-gray-200">
-                    <span class="text-gray-400">NISS</span>
-                    <b class="font-mono text-gray-800">{{ $contact->niss }}</b>
-                </div>
-                <div class="flex justify-between py-1.5 border-b border-dashed border-gray-200">
-                    <span class="text-gray-400">WhatsApp</span>
-                    <b class="text-gray-800">{{ $contact->phone }}</b>
-                </div>
-                <div class="flex justify-between py-1.5 border-b border-dashed border-gray-200">
-                    <span class="text-gray-400">Kota Domisili</span>
-                    <b class="text-gray-800">{{ $contact->city ?: '-' }}</b>
-                </div>
-                <div class="flex justify-between py-1.5 border-b border-dashed border-gray-200">
-                    <span class="text-gray-400">Sumber Kontak</span>
-                    <b class="text-gray-800">{{ $contact->source ?: '-' }}</b>
-                </div>
-                <div class="flex justify-between py-1.5">
-                    <span class="text-gray-400">PIC / CS Owner</span>
-                    <b class="text-gray-800">{{ $contact->owner?->name ?: '-' }}</b>
-                </div>
-            </div>
-
-            <div class="p-5 rounded-2xl bg-[#FBFBFE] border border-[#ECEEF5] space-y-3">
-                <h3 class="font-extrabold text-sm text-[#252B5B] mb-2">Preferensi & Catatan</h3>
-                <div class="flex justify-between py-1.5 border-b border-dashed border-gray-200">
-                    <span class="text-gray-400">Program Favorit</span>
-                    <b class="text-[#343A72]">{{ $contact->program ?: '-' }}</b>
-                </div>
-                <div class="flex justify-between py-1.5 border-b border-dashed border-gray-200">
-                    <span class="text-gray-400">Status Donor</span>
-                    <b class="text-gray-800">{{ $contact->status }}</b>
-                </div>
-                <div>
-                    <span class="text-gray-400 block mb-1">Catatan Relasi</span>
-                    <div class="p-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 leading-relaxed">
-                        {{ $contact->relationship_note ?: 'Tidak ada catatan khusus.' }}
-                    </div>
-                </div>
-                <div>
-                    <span class="text-gray-400 block mb-1">Tags</span>
-                    <div class="flex flex-wrap gap-1.5">
-                        @forelse($contact->tags ?: [] as $tg)
-                            <span class="px-2.5 py-1 rounded-full bg-white border border-[#E1E3EC] text-gray-600 font-bold text-[11px]">{{ $tg }}</span>
-                        @empty
-                            <span class="text-gray-400">-</span>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 2: Zakat -->
-        <div x-show="tab === 'zakat'" class="pt-5 space-y-3" x-cloak>
-            @forelse($contact->calculations as $calc)
-            <div class="p-4 rounded-2xl bg-[#FBFBFE] border border-[#ECEEF5] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <b class="font-bold text-sm text-[#252B5B]">{{ $calc->ref_no }}</b>
-                        <span class="px-2 py-0.5 rounded-full font-extrabold text-[10px]
-                            {{ $calc->status === 'Lunas' ? 's-active' : ($calc->status === 'Outstanding' ? 's-red' : 's-risk') }}">
-                            {{ $calc->status }}
-                        </span>
-                    </div>
-                    <div class="text-gray-400 mt-1">{{ $calc->type }} • Tanggal: {{ $calc->calculation_date?->format('d M Y') }}</div>
-                </div>
-                <div class="flex items-center gap-6">
-                    <div>
-                        <div class="text-gray-400 text-[10px]">Kewajiban Zakat</div>
-                        <b class="text-sm font-extrabold text-[#343A72]">Rp {{ number_format($calc->zakat_amount, 0, ',', '.') }}</b>
-                    </div>
-                    <div>
-                        <div class="text-gray-400 text-[10px]">Terbayar</div>
-                        <b class="text-sm font-extrabold text-emerald-600">Rp {{ number_format($calc->paid_amount, 0, ',', '.') }}</b>
-                    </div>
-                    <a href="{{ route('zakat.show', $calc) }}" class="px-3 py-1.5 bg-white border border-[#E1E3EC] rounded-xl font-bold text-[#343A72] hover:bg-gray-50">
-                        Detail
-                    </a>
-                </div>
-            </div>
-            @empty
-            <div class="text-center py-10 text-xs text-gray-400">Belum ada riwayat kalkulasi zakat untuk kontak ini.</div>
-            @endforelse
-        </div>
-
-        <!-- Tab 3: Transactions -->
-        <div x-show="tab === 'transactions'" class="pt-5 space-y-3" x-cloak>
-            @forelse($contact->transactions as $tx)
-            <div class="p-4 rounded-2xl bg-[#FBFBFE] border border-[#ECEEF5] flex items-center justify-between gap-3 text-xs">
-                <div>
-                    <b class="block font-bold text-sm text-[#252B5B]">{{ $tx->id }}</b>
-                    <div class="text-gray-400 mt-0.5">{{ $tx->type }} • {{ $tx->program }} • {{ $tx->transaction_date?->format('d M Y H:i') }}</div>
-                </div>
-                <div class="text-right">
-                    <b class="block text-sm font-black text-[#343A72]">Rp {{ number_format($tx->amount, 0, ',', '.') }}</b>
-                    <span class="text-[11px] text-gray-400">{{ $tx->payment_method }} • Recorded by {{ $tx->recordedBy?->name ?: '-' }}</span>
-                </div>
-            </div>
-            @empty
-            <div class="text-center py-10 text-xs text-gray-400">Belum ada transaksi dana tercatat.</div>
-            @endforelse
-        </div>
-
-        <!-- Tab 4: Follow-up -->
-        <div x-show="tab === 'followup'" class="pt-5 space-y-3" x-cloak>
-            @forelse($contact->followups as $fu)
-            <div class="p-4 rounded-2xl bg-[#FBFBFE] border border-[#ECEEF5] flex items-center justify-between gap-3 text-xs">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <b class="font-bold text-sm text-[#252B5B]">{{ $fu->title }}</b>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $fu->status === 'Overdue' ? 'bg-red-100 text-red-700' : ($fu->status === 'Completed' ? 'bg-gray-100 text-gray-600' : 'bg-emerald-100 text-emerald-800') }}">
-                            {{ $fu->status }}
-                        </span>
-                    </div>
-                    <div class="text-gray-400 mt-1">{{ $fu->reason }} • Jadwal: {{ $fu->scheduled_at?->translatedFormat('d M Y H:i') }}</div>
-                </div>
-                @if($fu->status !== 'Completed' && $canEdit)
-                <form action="{{ route('followups.complete', $fu) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="px-3 py-1.5 bg-[#EAF8F1] text-[#166848] font-bold rounded-xl hover:bg-[#caead8]">
-                        Selesai
-                    </button>
-                </form>
-                @endif
-            </div>
-            @empty
-            <div class="text-center py-10 text-xs text-gray-400">Belum ada follow-up tercatat.</div>
-            @endforelse
-        </div>
-
-        <!-- Modal Edit Contact -->
-        <div x-show="editModal" x-cloak class="fixed inset-0 bg-[#111536]/40 backdrop-blur-xs flex items-center justify-center z-50 p-4" @click.self="editModal = false">
-            <div class="bg-white rounded-[24px] border border-[#E1E3EC] shadow-bmss p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-                <h3 class="font-black text-lg text-[#252B5B]">Edit Kontak Donatur</h3>
-                <form action="{{ route('contacts.update', $contact) }}" method="POST" class="mt-4 space-y-3.5 text-xs">
-                    @csrf
-                    @method('PUT')
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Nama Lengkap *</label>
-                        <input type="text" name="name" value="{{ $contact->name }}" required class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold text-gray-700 mb-1">WhatsApp *</label>
-                            <input type="text" name="phone" value="{{ $contact->phone }}" required class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                        </div>
-                        <div>
-                            <label class="block font-bold text-gray-700 mb-1">Kota</label>
-                            <input type="text" name="city" value="{{ $contact->city }}" class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold text-gray-700 mb-1">Status Donor</label>
-                            <select name="status" class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                                @foreach(['Baru', 'Aktif', 'Loyal', 'At Risk', 'Dormant'] as $st)
-                                    <option value="{{ $st }}" {{ $contact->status === $st ? 'selected' : '' }}>{{ $st }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-bold text-gray-700 mb-1">Status Relasi</label>
-                            <select name="relation_status" class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                                @foreach(['Normal', 'Blokir', 'Untrust', 'Bosan'] as $rs)
-                                    <option value="{{ $rs }}" {{ $contact->relation_status === $rs ? 'selected' : '' }}>{{ $rs }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Catatan Status Relasi</label>
-                        <textarea name="relationship_note" rows="2" class="w-full p-2.5 bg-white border border-[#E1E3EC] rounded-xl text-xs">{{ $contact->relationship_note }}</textarea>
-                    </div>
-                    <div class="flex items-center justify-end gap-2 pt-2">
-                        <button type="button" @click="editModal = false" class="px-4 py-2 bg-gray-100 text-gray-600 font-bold rounded-xl">Batal</button>
-                        <button type="submit" class="px-4 py-2 bg-[#343A72] text-white font-bold rounded-xl hover:bg-[#252B5B]">Simpan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Modal Tambah Transaksi -->
-        <div x-show="txModal" x-cloak class="fixed inset-0 bg-[#111536]/40 backdrop-blur-xs flex items-center justify-center z-50 p-4" @click.self="txModal = false">
-            <div class="bg-white rounded-[24px] border border-[#E1E3EC] shadow-bmss p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-                <h3 class="font-black text-lg text-[#252B5B]">Input Transaksi Dana</h3>
-                <form action="{{ route('transactions.store') }}" method="POST" class="mt-4 space-y-3.5 text-xs">
-                    @csrf
-                    <input type="hidden" name="contact_id" value="{{ $contact->id }}">
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Jenis Dana *</label>
-                        <select name="type" required class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                            <option value="Zakat">Zakat</option>
-                            <option value="Infak" selected>Infak</option>
-                            <option value="Sedekah">Sedekah</option>
-                            <option value="Wakaf">Wakaf</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Nominal (Rp) *</label>
-                        <input type="number" name="amount" min="1000" step="1000" required placeholder="Contoh: 100000" class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs font-bold text-[#343A72]">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Metode Pembayaran *</label>
-                        <select name="payment_method" required class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                            @foreach(\App\Models\PaymentMethod::where('is_active', true)->get() as $pm)
-                                <option value="{{ $pm->name }}">{{ $pm->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Program / Keterangan</label>
-                        <input type="text" name="program" value="{{ $contact->program }}" placeholder="Contoh: Guru Ngaji / Sumur" class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                    </div>
-                    <div class="flex items-center justify-end gap-2 pt-2">
-                        <button type="button" @click="txModal = false" class="px-4 py-2 bg-gray-100 text-gray-600 font-bold rounded-xl">Batal</button>
-                        <button type="submit" class="px-4 py-2 bg-[#343A72] text-white font-bold rounded-xl hover:bg-[#252B5B]">Simpan Transaksi</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Modal Tambah Followup -->
-        <div x-show="fuModal" x-cloak class="fixed inset-0 bg-[#111536]/40 backdrop-blur-xs flex items-center justify-center z-50 p-4" @click.self="fuModal = false">
-            <div class="bg-white rounded-[24px] border border-[#E1E3EC] shadow-bmss p-6 max-w-md w-full">
-                <h3 class="font-black text-lg text-[#252B5B]">Buat Jadwal Follow-up</h3>
-                <form action="{{ route('followups.store') }}" method="POST" class="mt-4 space-y-3.5 text-xs">
-                    @csrf
-                    <input type="hidden" name="contact_id" value="{{ $contact->id }}">
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Alasan *</label>
-                        <select name="reason" class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                            <option value="Repeat Donation">Repeat Donation</option>
-                            <option value="Program Update">Program Update</option>
-                            <option value="Zakat">Reminder Zakat</option>
-                            <option value="Retention">Retention Donatur</option>
-                            <option value="Relationship">Silaturahmi</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-gray-700 mb-1">Judul / Pengingat *</label>
-                        <input type="text" name="title" required placeholder="Contoh: Sapa via WA dan tanyakan kabar" class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold text-gray-700 mb-1">Prioritas</label>
-                            <select name="priority" class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                                <option value="Normal">Normal</option>
-                                <option value="Tinggi">Tinggi</option>
-                                <option value="Rendah">Rendah</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-bold text-gray-700 mb-1">Waktu *</label>
-                            <input type="datetime-local" name="scheduled_at" required class="w-full h-10 px-3 bg-white border border-[#E1E3EC] rounded-xl text-xs">
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-end gap-2 pt-2">
-                        <button type="button" @click="fuModal = false" class="px-4 py-2 bg-gray-100 text-gray-600 font-bold rounded-xl">Batal</button>
-                        <button type="submit" class="px-4 py-2 bg-[#343A72] text-white font-bold rounded-xl hover:bg-[#252B5B]">Jadwalkan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+      <button class="tab" :class="tab === 'ov' ? 'a' : ''" @click="tab = 'ov'">Overview</button>
+      <button class="tab" :class="tab === 'zk' ? 'a' : ''" @click="tab = 'zk'">Zakat</button>
+      <button class="tab" :class="tab === 'tr' ? 'a' : ''" @click="tab = 'tr'">Transaksi</button>
+      <button class="tab" :class="tab === 'fo' ? 'a' : ''" @click="tab = 'fo'">Follow-up</button>
     </div>
+
+    <!-- Tab Overview -->
+    <div class="tabp" :class="tab === 'ov' ? 'a' : ''">
+      <div class="sub">
+        <div class="card sec">
+          <div class="sh"><h3>Data Kontak</h3></div>
+          <div class="kv"><span>NISS</span><b>{{ $contact->niss }}</b></div>
+          <div class="kv"><span>WhatsApp</span><b>{{ $contact->phone }}</b></div>
+          <div class="kv"><span>Kota</span><b>{{ $contact->city ?: '-' }}</b></div>
+          <div class="kv"><span>Source</span><b>{{ $contact->source ?: '-' }}</b></div>
+          <div class="kv"><span>PIC / Owner</span><b>{{ $contact->owner?->name ?: '-' }}</b></div>
+        </div>
+        <div class="card sec">
+          <div class="sh"><h3>Insight</h3></div>
+          <div class="kv"><span>Program Favorit</span><b>{{ $contact->program ?: '-' }}</b></div>
+          <div class="kv"><span>Segment</span><b>{{ $contact->status }} Donor</b></div>
+          <div class="kv"><span>Next Action</span><b>{{ $contact->followups->firstWhere('status', '!=', 'Completed')?->scheduled_at?->format('d M H:i') ?: 'Belum ada' }}</b></div>
+          <div style="margin-top:12px">
+            @forelse($contact->tags ?: [] as $t)
+              <span class="tag">{{ $t }}</span>
+            @empty
+              <span class="small muted">Tidak ada tag</span>
+            @endforelse
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Zakat -->
+    <div class="tabp" :class="tab === 'zk' ? 'a' : ''">
+      <div class="sub">
+        <div class="card sec">
+          <div class="sh"><h3>Status Zakat</h3></div>
+          @if($latestCalc)
+            <div style="padding:18px;border-radius:18px;background:linear-gradient(180deg,var(--gold),#ffd24d);color:#3b2c00">
+              <div class="small" style="opacity:.75">Kewajiban Zakat</div>
+              <div style="font-size:28px;font-weight:800;margin:4px 0 3px">Rp {{ number_format($latestCalc->zakat_amount, 0, ',', '.') }}</div>
+              <div class="small">{{ $latestCalc->type }} · {{ $latestCalc->status }}</div>
+            </div>
+            <div class="kv" style="margin-top:14px"><span>Dibayar</span><b>Rp {{ number_format($latestCalc->paid_amount, 0, ',', '.') }}</b></div>
+            <div class="kv"><span>Sisa</span><b>Rp {{ number_format($latestCalc->remaining_amount, 0, ',', '.') }}</b></div>
+            <div class="kv"><span>Tanggal Hitung</span><b>{{ $latestCalc->calculation_date?->format('d M Y') }}</b></div>
+          @else
+            <div class="empty">Belum ada perhitungan zakat.</div>
+          @endif
+        </div>
+        <div class="card sec">
+          <div class="sh"><h3>Detail Harta</h3></div>
+          @if(! $canEdit && ! auth()->user()->isMaster())
+            <div class="mask">🔒 Detail harta hanya terlihat oleh owner dan Master Admin</div>
+          @elseif($latestCalc)
+            <div class="kv"><span>Total Harta</span><b>Rp {{ number_format($latestCalc->assets_total, 0, ',', '.') }}</b></div>
+            <div class="kv"><span>Pengurang</span><b>Rp {{ number_format($latestCalc->deductions_total, 0, ',', '.') }}</b></div>
+            <div class="kv"><span>Harta Bersih</span><b>Rp {{ number_format($latestCalc->net_amount, 0, ',', '.') }}</b></div>
+            <div class="kv"><span>Nisab</span><b>Rp {{ number_format($latestCalc->nisab_amount, 0, ',', '.') }}</b></div>
+          @else
+            <div class="empty">Belum ada detail perhitungan.</div>
+          @endif
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Transaksi -->
+    <div class="tabp" :class="tab === 'tr' ? 'a' : ''">
+      <div class="card sec">
+        <div class="sh"><h3>Riwayat Transaksi</h3></div>
+        @forelse($contact->transactions as $t)
+          <div class="item">
+            <span class="dot" style="background:{{ $t->type === 'Zakat' ? 'var(--gold)' : 'var(--red)' }}"></span>
+            <div style="flex:1">
+              <b>{{ $t->type }} · {{ $t->program }}</b>
+              <div class="small muted">{{ $t->id }} · dicatat oleh {{ $t->recordedBy?->name ?: '-' }} · {{ $t->transaction_date?->format('d M Y H:i') }}</div>
+            </div>
+            <b>Rp {{ number_format($t->amount, 0, ',', '.') }}</b>
+          </div>
+        @empty
+          <div class="empty">Belum ada transaksi dana.</div>
+        @endforelse
+      </div>
+    </div>
+
+    <!-- Tab Follow-up -->
+    <div class="tabp" :class="tab === 'fo' ? 'a' : ''">
+      <div class="card sec">
+        <div class="sh"><h3>Follow-up Terkait</h3></div>
+        @forelse($contact->followups as $f)
+          <div class="item">
+            <span class="dot" style="background:{{ $f->reason === 'Zakat' ? 'var(--gold)' : 'var(--navy)' }}"></span>
+            <div style="flex:1">
+              <b>{{ $f->title }}</b>
+              <div class="small muted">{{ $f->reason }} · {{ $f->scheduled_at?->format('d M Y H:i') }}</div>
+            </div>
+            <span class="status {{ $f->status === 'Overdue' ? 's-dorm' : ($f->status === 'Completed' ? 's-gray' : 's-active') }}">
+              {{ $f->status }}
+            </span>
+          </div>
+        @empty
+          <div class="empty">Belum ada follow-up.</div>
+        @endforelse
+      </div>
+    </div>
+
+    <!-- Modal Edit Kontak -->
+    <div class="modalbg" x-show="editModal" x-cloak style="display:flex">
+      <div class="modal" @click.outside="editModal = false">
+        <div class="sh">
+          <h3>Edit Kontak Donatur</h3>
+          <button class="icon" @click="editModal = false">×</button>
+        </div>
+        <form action="{{ route('contacts.update', $contact) }}" method="POST">
+          @csrf
+          @method('PUT')
+          <div class="field">
+            <label>Nama Lengkap</label>
+            <input class="input" name="name" value="{{ $contact->name }}" required>
+          </div>
+          <div class="fg">
+            <div class="field">
+              <label>WhatsApp</label>
+              <input class="input" name="phone" value="{{ $contact->phone }}" required>
+            </div>
+            <div class="field">
+              <label>Kota</label>
+              <input class="input" name="city" value="{{ $contact->city }}">
+            </div>
+          </div>
+          <div class="fg">
+            <div class="field">
+              <label>Status Donor</label>
+              <select class="input" name="status">
+                @foreach(['Baru', 'Aktif', 'Loyal', 'At Risk', 'Dormant'] as $st)
+                  <option value="{{ $st }}" {{ $contact->status === $st ? 'selected' : '' }}>{{ $st }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="field">
+              <label>Status Relasi</label>
+              <select class="input" name="relation_status">
+                @foreach(['Normal', 'Blokir', 'Untrust', 'Bosan'] as $rs)
+                  <option value="{{ $rs }}" {{ $contact->relation_status === $rs ? 'selected' : '' }}>{{ $rs }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Catatan Relasi</label>
+            <textarea class="input" name="relationship_note">{{ $contact->relationship_note }}</textarea>
+          </div>
+          <div class="q" style="margin-top:16px">
+            <button type="button" @click="editModal = false" class="btn btn-s">Batal</button>
+            <button type="submit" class="btn btn-p">Simpan Perubahan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Input Transaksi -->
+    <div class="modalbg" x-show="txModal" x-cloak style="display:flex">
+      <div class="modal" @click.outside="txModal = false">
+        <div class="sh">
+          <h3>Input Transaksi Dana</h3>
+          <button class="icon" @click="txModal = false">×</button>
+        </div>
+        <form action="{{ route('transactions.store') }}" method="POST">
+          @csrf
+          <input type="hidden" name="contact_id" value="{{ $contact->id }}">
+          <div class="field">
+            <label>Jenis Dana</label>
+            <select class="input" name="type">
+              <option value="Infak">Infak</option>
+              <option value="Zakat">Zakat</option>
+              <option value="Sedekah">Sedekah</option>
+              <option value="Wakaf">Wakaf</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Nominal</label>
+            <div class="money">
+              <span>Rp</span>
+              <input name="amount" type="number" min="1000" step="1000" required placeholder="0">
+            </div>
+          </div>
+          <div class="field">
+            <label>Metode Pembayaran</label>
+            <select class="input" name="payment_method">
+              @foreach(\App\Models\PaymentMethod::where('is_active', true)->get() as $pm)
+                <option value="{{ $pm->name }}">{{ $pm->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="field">
+            <label>Program / Keterangan</label>
+            <input class="input" name="program" value="{{ $contact->program }}">
+          </div>
+          <div class="q" style="margin-top:16px">
+            <button type="button" @click="txModal = false" class="btn btn-s">Batal</button>
+            <button type="submit" class="btn btn-p">Simpan Transaksi</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Tambah Followup -->
+    <div class="modalbg" x-show="fuModal" x-cloak style="display:flex">
+      <div class="modal" @click.outside="fuModal = false">
+        <div class="sh">
+          <h3>Tambah Follow-up</h3>
+          <button class="icon" @click="fuModal = false">×</button>
+        </div>
+        <form action="{{ route('followups.store') }}" method="POST">
+          @csrf
+          <input type="hidden" name="contact_id" value="{{ $contact->id }}">
+          <div class="field">
+            <label>Alasan</label>
+            <select class="input" name="reason">
+              <option value="Repeat Donation">Repeat Donation</option>
+              <option value="Program Update">Program Update</option>
+              <option value="Zakat">Reminder Zakat</option>
+              <option value="Retention">Retention</option>
+              <option value="Relationship">Relationship</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Judul / Catatan</label>
+            <input class="input" name="title" required placeholder="Contoh: Sapa via WhatsApp">
+          </div>
+          <div class="fg">
+            <div class="field">
+              <label>Prioritas</label>
+              <select class="input" name="priority">
+                <option value="Normal">Normal</option>
+                <option value="Tinggi">Tinggi</option>
+                <option value="Rendah">Rendah</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Jadwal</label>
+              <input class="input" type="datetime-local" name="scheduled_at" required value="{{ now()->addHours(2)->format('Y-m-d\TH:i') }}">
+            </div>
+          </div>
+          <div class="q" style="margin-top:16px">
+            <button type="button" @click="fuModal = false" class="btn btn-s">Batal</button>
+            <button type="submit" class="btn btn-p">Simpan Follow-up</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </x-app-layout>
