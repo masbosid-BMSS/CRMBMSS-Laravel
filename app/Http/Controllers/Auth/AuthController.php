@@ -24,9 +24,15 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password'], 'status' => 'active'], $request->boolean('remember'))) {
+        $username = trim($credentials['username']);
+        $password = trim($credentials['password']);
+
+        // Cari user berdasarkan username (case-insensitive)
+        $user = \App\Models\User::whereRaw('LOWER(username) = ?', [strtolower($username)])->first();
+
+        if ($user && $user->status === 'active' && \Illuminate\Support\Facades\Hash::check($password, $user->password)) {
+            Auth::login($user, $request->boolean('remember'));
             $request->session()->regenerate();
-            $user = Auth::user();
             $user->update(['last_login_at' => now()]);
 
             return redirect()->intended(route('dashboard'));

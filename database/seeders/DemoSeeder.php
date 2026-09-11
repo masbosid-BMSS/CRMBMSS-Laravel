@@ -56,26 +56,28 @@ class DemoSeeder extends Seeder
             $rel = $relations[$i % count($relations)];
             $prog = $programs[$i % $programs->count()]->name;
 
-            $c = Contact::create([
-                'id' => (string) Str::uuid(),
-                'niss' => $niss,
-                'name' => $name,
-                'phone' => '08' . str_pad((string) (1200000000 + $i * 7919), 10, '0'),
-                'city' => $cities[$i % count($cities)],
-                'owner_id' => $cs->id,
-                'wa_account_id' => $wa?->id,
-                'status' => $statuses[$i % count($statuses)],
-                'relation_status' => $rel,
-                'relationship_note' => $rel !== 'Normal' ? "Catatan relasi untuk kondisi donatur status {$rel}." : null,
-                'zakat_status' => $i % 7 === 0 ? 'Outstanding' : ($i % 5 === 0 ? 'Lunas' : 'Belum Dihitung'),
-                'ltv' => ($i % 10 + 1) * 250000,
-                'program' => $prog,
-                'source' => $sources[$i % count($sources)],
-                'tags' => ['#Demo', "#{$prog}"],
-                'notes' => 'Kontak demo hasil seeder sistem CRM BMSS.',
-                'last_activity_at' => now()->subDays($i % 15),
-                'created_at' => now()->subDays($i % 40),
-            ]);
+            $c = Contact::updateOrCreate(
+                ['niss' => $niss],
+                [
+                    'id' => (string) Str::uuid(),
+                    'name' => $name,
+                    'phone' => '08' . str_pad((string) (1200000000 + $i * 7919), 10, '0'),
+                    'city' => $cities[$i % count($cities)],
+                    'owner_id' => $cs->id,
+                    'wa_account_id' => $wa?->id,
+                    'status' => $statuses[$i % count($statuses)],
+                    'relation_status' => $rel,
+                    'relationship_note' => $rel !== 'Normal' ? "Catatan relasi untuk kondisi donatur status {$rel}." : null,
+                    'zakat_status' => $i % 7 === 0 ? 'Outstanding' : ($i % 5 === 0 ? 'Lunas' : 'Belum Dihitung'),
+                    'ltv' => ($i % 10 + 1) * 250000,
+                    'program' => $prog,
+                    'source' => $sources[$i % count($sources)],
+                    'tags' => ['#Demo', "#{$prog}"],
+                    'notes' => 'Kontak demo hasil seeder sistem CRM BMSS.',
+                    'last_activity_at' => now()->subDays($i % 15),
+                    'created_at' => now()->subDays($i % 40),
+                ]
+            );
 
             $contacts[] = $c;
         }
